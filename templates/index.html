@@ -79,16 +79,7 @@
 
         // Fetch traffic data every 5 seconds
         setInterval(fetchTrafficData, 5000);
-        function fetchData() {
-            fetch('/traffic_data')
-                .then(response => response.json())
-                .then(data => {
-                    // Update your UI here
-                    console.log('New data:', data);
-                    setTimeout(fetchData, 5000);  // Poll every 5 seconds
-                });
-        }
-        window.onload = fetchData;
+        
     </script>
 </body>
 </html>
