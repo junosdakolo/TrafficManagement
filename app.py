@@ -47,6 +47,14 @@ def create_app():
             thread.daemon = True
             thread.start()
             app.logger.info("🚦 Background data generation started")
+    # Start thread in production environment
+    if os.environ.get('RENDER'):  # Render-specific environment variable
+        if not hasattr(app, 'background_thread_started'):
+            app.background_thread_started = True
+            thread = Thread(target=generate_data_in_background)
+            thread.daemon = True
+            thread.start()
+            app.logger.info("🚦 Background data generation started (Render)")
 
     # Routes
     @app.route('/')
@@ -124,26 +132,43 @@ def traffic_management_decision(data):
         )
     }
 
+# def generate_data_in_background():
+#     while True:
+#         try:
+#             with app.app_context():
+#                 new_data = generate_traffic_data()
+#                 decision = traffic_management_decision(new_data)
+#                 record = TrafficData(
+#                     intersection_id=new_data["intersection_id"],
+#                     traffic_density=new_data["traffic_density"],
+#                     emergency_vehicle=new_data["emergency_vehicle"],
+#                     time_of_day=new_data["time_of_day"],
+#                     decision=decision
+#                 )
+#                 db.session.add(record)
+#                 db.session.commit()
+#                 app.logger.debug(f"Record added: {new_data['intersection_id']}")
+#         except Exception as e:
+#             app.logger.error(f"Background data error: {str(e)}")
+#             db.session.rollback()
+#         time.sleep(5)
+# Add automatic reconnection to database
 def generate_data_in_background():
     while True:
         try:
             with app.app_context():
+                # Your existing data generation logic
                 new_data = generate_traffic_data()
                 decision = traffic_management_decision(new_data)
-                record = TrafficData(
-                    intersection_id=new_data["intersection_id"],
-                    traffic_density=new_data["traffic_density"],
-                    emergency_vehicle=new_data["emergency_vehicle"],
-                    time_of_day=new_data["time_of_day"],
-                    decision=decision
-                )
+                record = TrafficData(...)
                 db.session.add(record)
                 db.session.commit()
-                app.logger.debug(f"Record added: {new_data['intersection_id']}")
+                app.logger.debug(f"Data inserted: {record.id}")
+                
         except Exception as e:
-            app.logger.error(f"Background data error: {str(e)}")
+            app.logger.error(f"Database error: {str(e)}")
             db.session.rollback()
-        time.sleep(5)
+            time.sleep(10)  # Wait before retrying
 
 app = create_app()
 
