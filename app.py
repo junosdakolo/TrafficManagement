@@ -1,15 +1,12 @@
 import os
 import random
 import time
-from threading import Thread
+from threading import Thread, Lock
 from flask import Flask, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 
+# Initialize SQLAlchemy
 db = SQLAlchemy()
-
-# Database model
-class TrafficData(db.Model):
-    # ... (keep your existing model columns) ...
 
 def create_app():
     app = Flask(__name__)
@@ -24,51 +21,84 @@ def create_app():
     # Initialize tables
     with app.app_context():
         db.create_all()
+    # Configure background thread
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        thread = Thread(target=generate_data_in_background)
+        thread.daemon = True
+        thread.start()
+        app.logger.info("🚦 Background data generation started")
 
-    # Start thread only once
-    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        if not hasattr(app, 'background_thread'):
-            app.background_thread = Thread(target=background_data_worker)
-            app.background_thread.daemon = True
-            app.background_thread.start()
-            app.logger.info("🚦 Background thread started")
+    # ▼▼▼ Add the new route here ▼▼▼
+    @app.route('/dbcheck')
+    def db_check():
+        try:
+            db.session.execute("SELECT 1")
+            return "Database connection successful", 200
+        except Exception as e:
+            return f"Database connection failed: {str(e)}", 500
 
-    # Routes
     @app.route('/')
     def home():
         return render_template('index.html')
 
     @app.route('/traffic_data')
     def get_traffic_data():
-        records = TrafficData.query.order_by(TrafficData.id.desc()).limit(50).all()
+        records = TrafficData.query.all()
         return jsonify([{
-            # ... (your existing response format) ...
+            'intersection_id': r.intersection_id,
+            'traffic_density': r.traffic_density,
+            'emergency_vehicle': r.emergency_vehicle,
+            'time_of_day': r.time_of_day,
+            'decision': r.decision
         } for r in records])
 
     return app
 
-def background_data_worker():
-    """Persistent background data generator"""
+# Database model
+class TrafficData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    intersection_id = db.Column(db.String(50))
+    traffic_density = db.Column(db.String(20))
+    emergency_vehicle = db.Column(db.Boolean)
+    time_of_day = db.Column(db.String(20))
+    decision = db.Column(db.JSON)
+
+# Data generation functions
+def generate_traffic_data():
+    return {
+        "intersection_id": random.choice(["Apapa", "Mile 2", "Ikeja", "Lekki", "Ikoyi", "Victoria Island"]),
+        "traffic_density": random.choice(["low", "medium", "high"]),
+        "emergency_vehicle": random.choice([True, False]),
+        "time_of_day": random.choice(["morning_rush", "daytime", "evening_rush", "night"])
+    }
+
+def traffic_management_decision(data):
+    return {
+        "traffic_density_action": "Increase green by 30%" if data["traffic_density"] == "high" else 
+                                "Normal" if data["traffic_density"] == "medium" else 
+                                "Decrease by 20%",
+        "emergency_action": "Priority extended green" if data["emergency_vehicle"] else "Normal",
+        "time_of_day_action": "Extend green by 20%" if data["time_of_day"] in ["morning_rush", "evening_rush"] 
+                            else "Normal"
+    }
+
+def generate_data_in_background():
     while True:
-        try:
-            with app.app_context():
-                # Your data generation logic
-                new_data = generate_traffic_data()
-                decision = traffic_management_decision(new_data)
-                record = TrafficData(
-                    intersection_id=new_data["intersection_id"],
-                    traffic_density=new_data["traffic_density"],
-                    emergency_vehicle=new_data["emergency_vehicle"],
-                    time_of_day=new_data["time_of_day"],
-                    decision=decision
-                )
-                db.session.add(record)
-                db.session.commit()
-                app.logger.debug(f"Added record: {new_data['intersection_id']}")
-        except Exception as e:
-            app.logger.error(f"Background worker error: {str(e)}")
+        new_data = generate_traffic_data()
+        decision = traffic_management_decision(new_data)
+        with app.app_context():
+            record = TrafficData(
+                intersection_id=new_data["intersection_id"],
+                traffic_density=new_data["traffic_density"],
+                emergency_vehicle=new_data["emergency_vehicle"],
+                time_of_day=new_data["time_of_day"],
+                decision=decision
+            )
+            db.session.add(record)
+            db.session.commit()
         time.sleep(5)
 
+# Initialize Flask app
 app = create_app()
 
 if __name__ == '__main__':
