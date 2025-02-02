@@ -11,32 +11,28 @@ db = SQLAlchemy()
 def create_app():
     app = Flask(__name__)
     
-    # Database configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL').replace(
-        'postgres://', 'postgresql://', 1
+    # Configure database
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', '').replace(
+        "postgres://", "postgresql://", 1
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Initialize database with app
     db.init_app(app)
-
-    # Initialize tables
+    
+    # Create tables
     with app.app_context():
         db.create_all()
+
     # Configure background thread
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        # Start background thread only in main process
         thread = Thread(target=generate_data_in_background)
         thread.daemon = True
         thread.start()
         app.logger.info("🚦 Background data generation started")
 
-    # ▼▼▼ Add the new route here ▼▼▼
-    @app.route('/dbcheck')
-    def db_check():
-        try:
-            db.session.execute("SELECT 1")
-            return "Database connection successful", 200
-        except Exception as e:
-            return f"Database connection failed: {str(e)}", 500
-
+    # Add routes
     @app.route('/')
     def home():
         return render_template('index.html')
