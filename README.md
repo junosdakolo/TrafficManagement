@@ -1,2 +1,2 @@
 # TrafficManagement
-Creating of a traffic management system for my Masters in system Engineering T the University of Lagos
+Creating a traffic management system for my Master in system Engineering  the University of Lagos
