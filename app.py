@@ -12,11 +12,13 @@ def create_app():
     app = Flask(__name__)
     
     # Configure database
-    app.config['SQLALCHEMY_DATABASE_URI'] = (
-        "postgresql://traffic_user:Q3fDQcLm3NssAsRHOAVcR1JLQ6jozDvj@"
-        "dpg-cuftj9a3esus73e4pbb0-a:5432/trafficdb"
-        "?sslmode=require"
-    )
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'connect_args': {
+            'sslmode': 'require',
+            'sslrootcert': os.path.join(os.path.dirname(__file__), 'prod-ca-2021.crt')
+        }
+}
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Initialize database with app
