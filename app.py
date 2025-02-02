@@ -49,6 +49,21 @@ def create_app():
     db.init_app(app)
 
     with app.app_context():
+        try:
+            db.create_all()
+        except Exception as e:
+            if "does not exist" in str(e):
+                engine = db.engine
+                conn = engine.connect()
+                conn.execute("COMMIT")
+                conn.execute("CREATE DATABASE trafficdb_vxts")
+                conn.close()
+                db.create_all()
+            else:
+                app.logger.error(f"Database initialization failed: {str(e)}")
+                raise
+
+    with app.app_context():
         db.create_all()
 
     # Configure background thread
