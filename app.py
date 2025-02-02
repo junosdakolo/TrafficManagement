@@ -14,7 +14,8 @@ def create_app():
     app = Flask(__name__)
     
     # Configure database with environment variables
-    db_url = "postgresql://traffic_user:Q3fDQcLm3NssAsRHOAVcR1JLQ6jozDvj@dpg-cuftj9a3esus73e4pbb0-a.oregon-postgres.render.com:5432/trafficdb?sslmode=require"
+    db_url = "postgresql://traffic_user:cHmp4FxmJf7cUAyvEoshCIdq3zJjDH9j@dpg-cufv9lan91rc73ckae2g-a/trafficdb_vxts"
+
     
     # Fix common PostgreSQL URL issues
     if db_url.startswith('postgres://'):
