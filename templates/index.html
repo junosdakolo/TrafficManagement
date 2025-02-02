@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Traffic Management System</title>
+    <link rel="stylesheet" href="../static/output.css">
+    
+
+</head>
+<body>
+        <!-- Header Section -->
+        <div class="header">
+            <div class="imgdiv">
+                <img class="img" src="../static/img/1008dee469524403b6870ec23e7e95fe.png" alt="">
+            </div>
+            <div class="school">
+                <h1 >UNIVERSITY OF LAGOS</h1>
+                <h2 >SYSTEMS ENGINEERING</h2>
+            </div>
+        </div>
+        <!-- Student Info -->
+        <div class="infodiv">
+                <!-- Course Details -->
+                <div class="cours1">
+                    <h5 >COURSE: EXPERT SYSTEMS APPLICATION TO ENGINEERING PROBLEMS</h5>
+                    <h5 >COURSE CODE: SSG816</h5>
+                </div>
+                <!-- Student Details -->
+                <div class="studentinfo">
+                    <h5 >STUDENT NAME: DAKOLO EMMANUEL IMOMOTIMI</h5>
+                    <h5 >REG NO: 239047016</h5>
+                </div>
+            </div>
+        </div>
+
+    <h1 id="trafficheader">Smart Traffic Management System</h1>
+    <h2 id="trafficdata">Live Traffic Data</h2>
+    <table id="traffic-table">
+        <thead>
+            <tr>
+                <th>Intersection ID</th>
+                <th>Traffic Density</th>
+                <th>Emergency Vehicle</th>
+                <th>Time of Day</th>
+                <th>Traffic Signal Action</th>
+                <th>Emergency Action</th>
+                <th>Time Adjustment</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Traffic data will be populated here -->
+        </tbody>
+    </table>
+
+    <script>
+        function fetchTrafficData() {
+            fetch('/traffic_data')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#traffic-table tbody');
+                    tableBody.innerHTML = ''; // Clear existing data
+                    data.forEach(entry => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${entry.intersection_id}</td>
+                            <td>${entry.traffic_density}</td>
+                            <td>${entry.emergency_vehicle}</td>
+                            <td>${entry.time_of_day}</td>
+                            <td>${entry.traffic_density_action}</td>
+                            <td>${entry.emergency_action}</td>
+                            <td>${entry.time_of_day_action}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching traffic data:', error));
+        }
+
+        // Fetch traffic data every 5 seconds
+        setInterval(fetchTrafficData, 5000);
+    </script>
+</body>
+</html>
